@@ -30,6 +30,15 @@ from utils.models import CogAgentModel, CogVLMModel
 
 
 
+
+def _get_device():
+    if torch.cuda.is_available():
+        return 'cuda'
+    if torch.backends.mps.is_available():
+        return 'mps'
+    return 'cpu'
+
+
 DESCRIPTION = '''<h1 style='text-align: center'> <a href="https://github.com/THUDM/CogVLM">CogVLM / CogAgent</a> </h1>'''
 
 NOTES = '<h3> This app is adapted from <a href="https://github.com/THUDM/CogVLM">https://github.com/THUDM/CogVLM</a>. It would be recommended to check out the repo if you want to see the detail of our model, CogVLM & CogAgent. </h3>'
@@ -75,7 +84,7 @@ def load_model(args):
         bf16=args.bf16,
         skip_init=True,
         use_gpu_initialization=True if (torch.cuda.is_available() and args.quant is None) else False,
-        device='cpu' if args.quant else 'cuda'),
+        device='cpu' if args.quant else _get_device()),
         overwrite_args={'model_parallel_size': world_size} if world_size != 1 else {}
     )
     model = model.eval()
@@ -88,8 +97,9 @@ def load_model(args):
 
     if args.quant:
         quantize(model, args.quant)
-        if torch.cuda.is_available():
-            model = model.cuda()
+        device = _get_device()
+        if device != 'cpu':
+            model = model.to(device)
     model.add_mixin('auto-regressive', CachedAutoregressiveMixin())
 
     text_processor_infer = llama2_text_processor_inference(tokenizer, args.max_length, model.image_length)
