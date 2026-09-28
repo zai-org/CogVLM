@@ -40,7 +40,7 @@ def draw_boxes(image, boxes, texts, output_fn='output.png'):
     img_with_overlay.save(output_fn)
 
 def boxstr_to_boxes(box_str):
-    boxes = [[int(y)/1000 for y in x.split(',')] for x in box_str.split(';') if x.replace(',', '').isdigit()]
+    boxes = [[int(y)/1000 for y in x.split(',')] for x in box_str.split(';') if x.replace(',', '').replace(' ', '').isdigit()]
     return boxes
 
 def text_to_dict(text):
